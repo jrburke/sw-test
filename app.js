@@ -1,8 +1,9 @@
+/*jshint esnext: true */
 // register service worker
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw-test/sw.js', { scope: '/sw-test/' }).then(function(reg) {
-    
+  navigator.serviceWorker.register('/sw-test-jrburke/sw.js', { scope: '/sw-test-jrburke/' }).then(function(reg) {
+
     if(reg.installing) {
       console.log('Service worker installing');
     } else if(reg.waiting) {
@@ -10,12 +11,36 @@ if ('serviceWorker' in navigator) {
     } else if(reg.active) {
       console.log('Service worker active');
     }
-    
+
   }).catch(function(error) {
     // registration failed
     console.log('Registration failed with ' + error);
   });
-};
+}
+
+
+var backendWorker;
+
+caches.match('/sw-test-jrburke/shared-worker.js')
+.then(workerJS => workerJS.blob())
+.then(blob => URL.createObjectURL(blob))
+.then(objectURL => {
+  backendWorker = new SharedWorker(objectURL, 'backend-worker');
+
+  backendWorker.port.onmessage = function(e) {
+    console.log('GOT MESSAGE FROM worker: ', e.data);
+  };
+
+  backendWorker.port.start();
+
+  backendWorker.port.postMessage('walrus');
+
+})
+.catch(function(err) {
+  console.log('No shared worker in cache: ', err);
+});
+
+
 
 // function for loading each image via XHR
 
